@@ -1,0 +1,281 @@
+========================================
+SCAN FILE MANAGEMENT API ENDPOINTS
+========================================
+
+BASE URL: http://127.0.0.1:8000/api
+
+========================================
+1. SCAN FILES
+========================================
+
+1.1 GET /scan-files
+Description: Get list of scan files with filters
+Parameters:
+  - year_id (required): Financial year ID
+  - user_id (optional): Filter by user
+  - status (optional): pending|submitted|rejected|deleted
+  - document_name (optional): Search by document/file name
+  - from_date (optional): Start date (YYYY-MM-DD)
+  - to_date (optional): End date (YYYY-MM-DD)
+  - per_page (optional): 10 (default) or 'all'
+  - page (optional): Page number
+
+Example:
+GET /api/scan-files?year_id=1&user_id=203&status=pending&per_page=10&page=1
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "scan_id": 123,
+      "file_name": "invoice.pdf",
+      "file_path": "https://s3.amazonaws.com/...",
+      "document_name": "Invoice Document",
+      "temp_scan_date": "2024-01-15",
+      "is_final_submitted": "N",
+      "is_temp_scan_rejected": "N",
+      "temp_scan_reject_remark": null,
+      "actions": ["view", "edit", "delete"]
+    }
+  ],
+  "pagination": {
+    "total": 100,
+    "per_page": 10,
+    "current_page": 1,
+    "last_page": 10
+  }
+}
+
+---
+
+1.2 GET /scan-files/{scanId}
+Description: Get single scan file details
+Parameters:
+  - year_id (required): Financial year ID
+
+Example:
+GET /api/scan-files/123?year_id=1
+
+---
+
+1.3 POST /scan-files/upload
+Description: Upload main scan file to S3
+Content-Type: multipart/form-data
+Parameters:
+  - main_file (required): File to upload
+  - location (required): Location ID
+  - bill_approver (required): Bill approver ID
+  - user_id (required): User ID
+  - year_id (required): Financial year ID
+  - group_id (optional): Group ID
+
+Example:
+POST /api/scan-files/upload
+Form Data:
+  - main_file: [file]
+  - location: 1
+  - bill_approver: 5
+  - user_id: 203
+  - year_id: 1
+
+Response:
+{
+  "success": true,
+  "message": "File uploaded successfully",
+  "data": {
+    "scan_id": 124,
+    "document_name": "124_203_Invoice_Document_15012024_103000",
+    "file_path": "https://s3.amazonaws.com/...",
+    "file_name": "1705315800.pdf"
+  }
+}
+
+---
+
+1.4 DELETE /scan-files/{scanId}
+Description: Soft delete scan file
+Parameters:
+  - year_id (required): Financial year ID
+  - user_id (required): User ID performing deletion
+
+Example:
+DELETE /api/scan-files/123?year_id=1&user_id=203
+
+Response:
+{
+  "success": true,
+  "message": "Scan file deleted successfully"
+}
+
+========================================
+2. SUPPORTING FILES
+========================================
+
+2.1 GET /scan-files/{scanId}/details
+Description: Get scan details with supporting files and document types
+Parameters:
+  - year_id (required): Financial year ID
+
+Example:
+GET /api/scan-files/123/details?year_id=1
+
+Response:
+{
+  "success": true,
+  "data": {
+    "main_file": {...},
+    "supporting_files": [...],
+    "document_types": [...]
+  }
+}
+
+---
+
+2.2 GET /scan-files/{scanId}/support-files
+Description: Get supporting files for a scan
+Example:
+GET /api/scan-files/123/support-files
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "support_id": 1,
+      "scan_id": 123,
+      "supp_doc_type_id": 5,
+      "doc_type_name": "Invoice Copy",
+      "doc_type_code": "INV",
+      "file_name": "1705315900.pdf",
+      "file_path": "https://s3.amazonaws.com/...",
+      "uploaded_date": "2024-01-15 10:45:00"
+    }
+  ]
+}
+
+---
+
+2.3 POST /scan-files/support-files/upload
+Description: Upload supporting file
+Content-Type: multipart/form-data
+Parameters:
+  - scan_id (required): Scan ID
+  - supp_doc_type_id (required): Document type ID
+  - support_file (required): File to upload
+
+Example:
+POST /api/scan-files/support-files/upload
+Form Data:
+  - scan_id: 123
+  - supp_doc_type_id: 5
+  - support_file: [file]
+
+Response:
+{
+  "success": true,
+  "message": "Supporting file uploaded successfully",
+  "data": {
+    "support_id": 35,
+    "file_path": "https://s3.amazonaws.com/...",
+    "file_name": "1705316000.pdf"
+  }
+}
+
+---
+
+2.4 DELETE /scan-files/support-files/{supportId}
+Description: Delete supporting file
+Example:
+DELETE /api/scan-files/support-files/35
+
+Response:
+{
+  "success": true,
+  "message": "Supporting file deleted successfully"
+}
+
+========================================
+3. DOCUMENT TYPES
+========================================
+
+3.1 GET /document-types
+Description: Get active document types for dropdown
+Example:
+GET /api/document-types
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "DocTypeId": 1,
+      "DocTypeName": "Invoice Copy",
+      "DocTypeCode": "INV"
+    },
+    {
+      "DocTypeId": 2,
+      "DocTypeName": "Purchase Order",
+      "DocTypeCode": "PO"
+    }
+  ]
+}
+
+========================================
+4. FINAL SUBMIT
+========================================
+
+4.1 POST /scan-files/final-submit
+Description: Final submit scan file
+Content-Type: application/json
+Parameters:
+  - scan_id (required): Scan ID
+  - document_name (required): Document name
+  - year_id (required): Financial year ID
+
+Example:
+POST /api/scan-files/final-submit
+Body:
+{
+  "scan_id": 123,
+  "document_name": "Final_Invoice_Document",
+  "year_id": 1
+}
+
+Response:
+{
+  "success": true,
+  "message": "Final submission completed."
+}
+
+========================================
+ERROR RESPONSES
+========================================
+
+All endpoints return standardized error responses:
+
+{
+  "success": false,
+  "message": "Error message here"
+}
+
+Common HTTP Status Codes:
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 404: Not Found
+- 422: Validation Error
+- 500: Server Error
+
+========================================
+ENVIRONMENT CONFIGURATION
+========================================
+
+Add these to your .env file:
+
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your_bucket_name
+
+========================================
