@@ -188,22 +188,35 @@ class ScanFileController extends Controller
 
     public function deleteScanFile(Request $request, $scanId)
     {
-        $yearId = $request->input('year_id');
+        $yearId = $request->input('year_id', 1);
         $userId = $request->input('user_id');
+
+        if (!$yearId) {
+            return $this->errorResponse('year_id is required', 400);
+        }
+
         DB::beginTransaction();
+
         try {
-            $scanFile = ScanFile::forYear($yearId)->where('scan_id', $scanId)->first();
+            $scanFile = ScanFile::forYear($yearId)
+                ->where('scan_id', $scanId)
+                ->first();
+
             if (!$scanFile) {
                 return $this->notFoundResponse('Scan file not found');
             }
+
             $scanFile->update([
                 'is_deleted' => ScanFile::STATUS_YES,
                 'deleted_date' => now(),
                 'deleted_date_datetime' => now(),
                 'deleted_by' => $userId,
             ]);
+
             DB::commit();
+
             return $this->successResponse(null, 'Scan file deleted successfully');
+
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Failed to delete scan file: ' . $e->getMessage(), 500);
