@@ -21,6 +21,14 @@ Route::post('/scan-files/final-submit', [ScanFileController::class, 'finalSubmit
 // Document Classifier routes
 Route::get('/classification/list', [DocClassifierController::class, 'getClassificationList']);
 Route::get('/classification/processed', [DocClassifierController::class, 'getProcessedList']);
+Route::get('/classification/verified', [DocClassifierController::class, 'getVerifiedProcessedList']);
+Route::get('/classification/not-verified', [DocClassifierController::class, 'getNotVerifiedProcessedList']);
+Route::get('/classification/doc-types', [DocClassifierController::class, 'getDocTypes']);
+Route::get('/classification/departments', [DocClassifierController::class, 'getDepartments']);
+Route::get('/classification/sub-departments', [DocClassifierController::class, 'getSubDepartments']);
+Route::get('/classification/bill-approvers', [DocClassifierController::class, 'getBillApprovers']);
+Route::get('/classification/auto-approve-reasons', [DocClassifierController::class, 'getAutoApproveReasons']);
+Route::post('/classification/extract-details', [DocClassifierController::class, 'extractDetails']);
 Route::get('/classification/rejected', [DocClassifierController::class, 'getRejectedClassifications']);
 Route::post('/classification/reject/{scanId}', [DocClassifierController::class, 'rejectScannedBill']);
 Route::post('/classification/move/{scanId}', [DocClassifierController::class, 'moveToClassification']);
