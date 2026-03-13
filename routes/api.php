@@ -2,7 +2,12 @@
 
 use App\Http\Controllers\Api\ScanFileController;
 use App\Http\Controllers\Api\DocClassifierController;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
+
+// Auth routes
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/financial-years', [AuthController::class, 'getFinancialYears']);
 
 // Dashboard
 Route::get('/dashboard', [ScanFileController::class, 'dashboard']);
