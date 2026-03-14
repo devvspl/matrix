@@ -429,6 +429,7 @@ class DocClassifierController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Please select Auto Approve Reason.']);
         }
         $table = "y{$yearId}_scan_file";
+        $additionalTable = "y{$yearId}_tbl_additional_information_details";
         $data = ['is_classified' => 'Y', 'classified_by' => $userId, 'classified_date' => now()->format('Y-m-d'), 'classified_date_datetime' => now(), 'doc_type_id' => $typeId, 'department_id' => $department, 'sub_department_id' => $subDept, 'having_multiple_dep' => $multiDept, 'l1_approved_by' => $billApprover ?: null, 'l1_approved_status' => 'N', 'is_auto_approve' => $autoApprove, 'auto_approve_reason_id' => $autoReason ?: null, 'is_classifion_reject' => 'N', 'is_file_punched' => 'N'];
         DB::beginTransaction();
         try {
@@ -436,6 +437,12 @@ class DocClassifierController extends Controller
             if (!$updated) {
                 DB::rollBack();
                 return response()->json(['status' => 'error', 'message' => 'Failed to update document details.']);
+            }
+            if (!empty($department)) {
+                $exists = DB::table($additionalTable)->where('scan_id', $scanId)->exists();
+                if (!$exists) {
+                    DB::table($additionalTable)->insert(['scan_id' => $scanId, 'department_id' => $department, 'sub_department_id' => $subDept, 'created_at' => now(), 'updated_at' => now()]);
+                }
             }
             $existing = DB::table('tbl_queues')->where('scan_id', $scanId)->where('status', 'pending')->first();
             if (!$existing) {
