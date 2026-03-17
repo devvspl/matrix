@@ -32,6 +32,7 @@ Route::get('/classification/auto-approve-reasons', [DocClassifierController::cla
 Route::post('/classification/extract-details', [DocClassifierController::class, 'extractDetails']);
 Route::get('/classification/rejected', [DocClassifierController::class, 'getRejectedClassifications']);
 Route::get('/classification/dashboard-counters', [DocClassifierController::class, 'getDashboardCounters']);
+Route::get('/classification/rejected-by-me', [DocClassifierController::class, 'getRejectedByMe']);
 Route::post('/classification/reject/{scanId}', [DocClassifierController::class, 'rejectScannedBill']);
 Route::post('/classification/move/{scanId}', [DocClassifierController::class, 'moveToClassification']);
 Route::post('/classification/update-document-name', [DocClassifierController::class, 'updateDocumentName']);

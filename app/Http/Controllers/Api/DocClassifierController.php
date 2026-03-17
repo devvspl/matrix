@@ -241,26 +241,102 @@ class DocClassifierController extends Controller
     {
         $yearId = $request->input('year_id');
         $userId = $request->input('user_id');
-        $table = "y{$yearId}_scan_file";
+        $table  = "y{$yearId}_scan_file";
+
         $queuedScanIds = DB::table('tbl_queues')->where('status', 'pending')->pluck('scan_id')->toArray();
-        $classificationQuery = DB::table("{$table} as s")->where('s.extract_status', 'P')->where('s.is_classified', 'N')->where('s.is_final_submitted', 'Y')->where('s.is_temp_scan_rejected', 'N')->where('s.is_deleted', 'N');
+
+        $classificationQuery = DB::table("{$table} as s")
+            ->where('s.extract_status', 'P')
+            ->where('s.is_classified', 'N')
+            ->where('s.is_final_submitted', 'Y')
+            ->where('s.is_temp_scan_rejected', 'N')
+            ->where('s.is_deleted', 'N');
         if (!empty($queuedScanIds)) {
             $classificationQuery->whereNotIn('s.scan_id', $queuedScanIds);
         }
-        $processedBase = DB::table("{$table} as s")->where('s.is_classified', 'Y')->where('s.is_deleted', 'N')->where('s.classified_by', $userId);
-        $rejectedCount = DB::table("{$table} as s")->where('s.document_name', '!=', '')->where('s.extract_status', 'Y')->where('s.is_deleted', 'N')->where('s.is_classified', 'Y')->where('s.is_classifion_reject', 'Y')->where('s.classified_by', $userId)->count();
+
+        $processedBase = DB::table("{$table} as s")
+            ->where('s.is_classified', 'Y')
+            ->where('s.is_deleted', 'N')
+            ->where('s.classified_by', $userId);
+
+        $rejectedClassifications = DB::table("{$table} as s")
+            ->where('s.document_name', '!=', '')
+            ->where('s.extract_status', 'Y')
+            ->where('s.is_deleted', 'N')
+            ->where('s.is_classified', 'Y')
+            ->where('s.is_classifion_reject', 'Y')
+            ->where('s.classified_by', $userId)
+            ->count();
+
+        $scansRejectedByMe = DB::table('tbl_scan_rejections')
+            ->where('temp_scan_rejected_by', $userId)
+            ->count();
+
         return $this->successResponse([
-            'classification_list' => (clone $classificationQuery)->count(),
-            'processed' => (clone $processedBase)->count(),
-            'verified_processed' => (clone $processedBase)->where('s.is_document_verified', 'Y')->count(),
-            'not_verified_processed' => (clone $processedBase)->where('s.is_document_verified', 'N')->count(),
-            'rejected_classifications' => $rejectedCount,
+            'pending_for_classification'  => (clone $classificationQuery)->count(),
+            'total_classified'            => (clone $processedBase)->count(),
+            'classification_rejected'     => $rejectedClassifications,
+            'total_scans_rejected_by_me'  => $scansRejectedByMe,
+            'document_not_received'       => (clone $processedBase)->where('s.is_document_verified', 'N')->count(),
+            'document_received'           => (clone $processedBase)->where('s.is_document_verified', 'Y')->count(),
         ]);
     }
 
     private function getSupportFiles(int $scanId): array
     {
         return DB::table('support_file')->select('supp_document_type_master.DocTypeName', 'support_file.file_path')->leftJoin('supp_document_type_master', 'supp_document_type_master.DocTypeId', '=', 'support_file.supp_doc_type_id')->where('support_file.scan_id', $scanId)->get()->toArray();
+    }
+
+    public function getRejectedByMe(Request $request)
+    {
+        $yearId  = $request->input('year_id');
+        $userId  = $request->input('user_id');
+        $perPage = $request->input('per_page', 10);
+        $page    = $request->input('page', 1);
+        $fromDate = $request->input('from_date');
+        $toDate   = $request->input('to_date');
+
+        $query = DB::table('tbl_scan_rejections as r')
+            ->select([
+                'r.id',
+                'r.scan_id',
+                'r.temp_scan_reject_remark as remark',
+                'r.temp_scan_reject_date as rejected_at',
+                's.document_name',
+                's.file_name',
+                's.file_path',
+                DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"),
+            ])
+            ->join("y{$yearId}_scan_file as s", 's.scan_id', '=', 'r.scan_id')
+            ->where('r.temp_scan_rejected_by', $userId);
+
+        if ($fromDate) {
+            $query->whereDate('r.temp_scan_reject_date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $query->whereDate('r.temp_scan_reject_date', '<=', $toDate);
+        }
+
+        $query->orderBy('r.temp_scan_reject_date', 'DESC');
+
+        $total     = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage  = ceil($total / $perPage);
+
+        return response()->json([
+            'status'     => 200,
+            'success'    => true,
+            'data'       => $documents,
+            'pagination' => [
+                'total'        => $total,
+                'per_page'     => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page'    => (int) $lastPage,
+                'from'         => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to'           => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
+        ]);
     }
 
     public function rejectScannedBill(Request $request, $scanId)
