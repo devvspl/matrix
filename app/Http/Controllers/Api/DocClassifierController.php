@@ -39,6 +39,10 @@ class DocClassifierController extends Controller
         $total = $query->count();
         $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
+            $doc->support_files = $this->getSupportFiles($doc->scan_id);
+            return $doc;
+        });
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -85,6 +89,10 @@ class DocClassifierController extends Controller
         $total = $query->count();
         $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
+            $doc->support_files = $this->getSupportFiles($doc->scan_id);
+            return $doc;
+        });
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -131,6 +139,10 @@ class DocClassifierController extends Controller
         $total = $query->count();
         $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
+            $doc->support_files = $this->getSupportFiles($doc->scan_id);
+            return $doc;
+        });
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -177,6 +189,10 @@ class DocClassifierController extends Controller
         $total = $query->count();
         $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
+            $doc->support_files = $this->getSupportFiles($doc->scan_id);
+            return $doc;
+        });
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -202,6 +218,10 @@ class DocClassifierController extends Controller
         $total = $query->count();
         $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
         $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
+            $doc->support_files = $this->getSupportFiles($doc->scan_id);
+            return $doc;
+        });
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -215,6 +235,32 @@ class DocClassifierController extends Controller
                 'to' => $total > 0 ? min($page * $perPage, $total) : null,
             ],
         ]);
+    }
+
+    public function getDashboardCounters(Request $request)
+    {
+        $yearId = $request->input('year_id');
+        $userId = $request->input('user_id');
+        $table = "y{$yearId}_scan_file";
+        $queuedScanIds = DB::table('tbl_queues')->where('status', 'pending')->pluck('scan_id')->toArray();
+        $classificationQuery = DB::table("{$table} as s")->where('s.extract_status', 'P')->where('s.is_classified', 'N')->where('s.is_final_submitted', 'Y')->where('s.is_temp_scan_rejected', 'N')->where('s.is_deleted', 'N');
+        if (!empty($queuedScanIds)) {
+            $classificationQuery->whereNotIn('s.scan_id', $queuedScanIds);
+        }
+        $processedBase = DB::table("{$table} as s")->where('s.is_classified', 'Y')->where('s.is_deleted', 'N')->where('s.classified_by', $userId);
+        $rejectedCount = DB::table("{$table} as s")->where('s.document_name', '!=', '')->where('s.extract_status', 'Y')->where('s.is_deleted', 'N')->where('s.is_classified', 'Y')->where('s.is_classifion_reject', 'Y')->where('s.classified_by', $userId)->count();
+        return $this->successResponse([
+            'classification_list' => (clone $classificationQuery)->count(),
+            'processed' => (clone $processedBase)->count(),
+            'verified_processed' => (clone $processedBase)->where('s.is_document_verified', 'Y')->count(),
+            'not_verified_processed' => (clone $processedBase)->where('s.is_document_verified', 'N')->count(),
+            'rejected_classifications' => $rejectedCount,
+        ]);
+    }
+
+    private function getSupportFiles(int $scanId): array
+    {
+        return DB::table('support_file')->select('supp_document_type_master.DocTypeName', 'support_file.file_path')->leftJoin('supp_document_type_master', 'supp_document_type_master.DocTypeId', '=', 'support_file.supp_doc_type_id')->where('support_file.scan_id', $scanId)->get()->toArray();
     }
 
     public function rejectScannedBill(Request $request, $scanId)
@@ -307,8 +353,7 @@ class DocClassifierController extends Controller
         try {
             $table = "y{$yearId}_scan_file";
             $data = [
-                'document_name' => $documentName,
-                'updated_at' => now(),
+                'document_name' => $documentName
             ];
             DB::table($table)->where('scan_id', $scanId)->update($data);
             return $this->successResponse(['document_name' => $documentName], 'Document name updated successfully');
