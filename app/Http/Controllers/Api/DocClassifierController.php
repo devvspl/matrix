@@ -339,13 +339,15 @@ class DocClassifierController extends Controller
         ]);
     }
 
-    public function rejectScannedBill(Request $request, $scanId)
+    public function rejectScannedBill(Request $request)
     {
         $request->validate([
+            'scan_id' => 'required|integer',
             'remark' => 'required|string',
             'user_id' => 'required|integer',
             'year_id' => 'required|integer',
         ]);
+        $scanId = $request->input('scan_id');
         $userId = $request->input('user_id');
         $remark = trim($request->input('remark'));
         $yearId = $request->input('year_id');
@@ -374,12 +376,14 @@ class DocClassifierController extends Controller
         }
     }
 
-    public function moveToClassification(Request $request, $scanId)
+    public function moveToClassification(Request $request)
     {
         $request->validate([
+            'scan_id' => 'required|integer',
             'user_id' => 'required|integer',
             'year_id' => 'required|integer',
         ]);
+        $scanId = $request->input('scan_id');
         $userId = $request->input('user_id');
         $yearId = $request->input('year_id');
         DB::beginTransaction();

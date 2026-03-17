@@ -186,9 +186,10 @@ class ScanFileController extends Controller
         }
     }
 
-    public function deleteScanFile(Request $request, $scanId)
+    public function deleteScanFile(Request $request)
     {
-        $yearId = $request->input('year_id', 1);
+        $scanId = $request->input('scan_id');
+        $yearId = $request->input('year_id');
         $userId = $request->input('user_id');
 
         if (!$yearId) {
@@ -247,7 +248,7 @@ class ScanFileController extends Controller
         }
         // Prepare data for insertion
         $data = [
-            'group_id' => $request->input('group_id', 1),
+            'group_id' => $request->input('group_id'),
             'temp_scan_by' => $userId,
             'is_temp_scan' => 'Y',
             'is_scan_complete' => 'N',
@@ -287,8 +288,9 @@ class ScanFileController extends Controller
         }
     }
 
-    public function getSupportFiles(Request $request, $scanId)
+    public function getSupportFiles(Request $request)
     {
+        $scanId = $request->input('scan_id');
         $supportFiles = SupportFile::with('documentType')->byScanId($scanId)->notDeleted()->get();
         $formattedFiles = $supportFiles->map(function ($file) {
             return [
@@ -369,8 +371,9 @@ class ScanFileController extends Controller
         }
     }
 
-    public function getScanDetails(Request $request, $scanId)
+    public function getScanDetails(Request $request)
     {
+        $scanId = $request->input('scan_id');
         $yearId = $request->input('year_id');
         $mainFile = ScanFile::forYear($yearId)->where('scan_id', $scanId)->where('is_deleted', 'N')->first();
         if (!$mainFile) {
