@@ -16,12 +16,14 @@ Route::delete('/scan-files', [ScanFileController::class, 'deleteScanFile']);
 Route::get('/scan-files/details', [ScanFileController::class, 'getScanDetails']);
 Route::get('/scan-files/support-files', [ScanFileController::class, 'getSupportFiles']);
 Route::post('/scan-files/support-files/upload', [ScanFileController::class, 'uploadSupporting']);
-Route::delete('/scan-files/support-files/{supportId}', [ScanFileController::class, 'deleteSupportFile']);
+Route::delete('/scan-files/support-files', [ScanFileController::class, 'deleteSupportFile']);
 Route::get('/document-types', [ScanFileController::class, 'getDocumentTypes']);
 Route::post('/scan-files/final-submit', [ScanFileController::class, 'finalSubmit']);
 // Document Classifier routes
+Route::get('/classification/dashboard-counters', [DocClassifierController::class, 'getDashboardCounters']);
 Route::get('/classification/list', [DocClassifierController::class, 'getClassificationList']);
 Route::get('/classification/processed', [DocClassifierController::class, 'getProcessedList']);
+Route::get('/classification/extraction-queue', [DocClassifierController::class, 'getQueueList']);
 Route::get('/classification/verified', [DocClassifierController::class, 'getVerifiedProcessedList']);
 Route::get('/classification/not-verified', [DocClassifierController::class, 'getNotVerifiedProcessedList']);
 Route::get('/classification/doc-types', [DocClassifierController::class, 'getDocTypes']);
@@ -31,7 +33,6 @@ Route::get('/classification/bill-approvers', [DocClassifierController::class, 'g
 Route::get('/classification/auto-approve-reasons', [DocClassifierController::class, 'getAutoApproveReasons']);
 Route::post('/classification/extract-details', [DocClassifierController::class, 'extractDetails']);
 Route::get('/classification/rejected', [DocClassifierController::class, 'getRejectedClassifications']);
-Route::get('/classification/dashboard-counters', [DocClassifierController::class, 'getDashboardCounters']);
 Route::get('/classification/rejected-by-me', [DocClassifierController::class, 'getRejectedByMe']);
 Route::post('/classification/reject', [DocClassifierController::class, 'rejectScannedBill']);
 Route::post('/classification/move', [DocClassifierController::class, 'moveToClassification']);

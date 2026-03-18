@@ -357,8 +357,9 @@ class ScanFileController extends Controller
         }
     }
 
-    public function deleteSupportFile(Request $request, $supportId)
+    public function deleteSupportFile(Request $request)
     {
+        $supportId = $request->input('support_id');
         try {
             $supportFile = SupportFile::find($supportId);
             if (!$supportFile) {

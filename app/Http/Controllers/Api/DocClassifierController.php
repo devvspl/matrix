@@ -527,6 +527,51 @@ class DocClassifierController extends Controller
         return response()->json(['status' => 200, 'success' => true, 'data' => $reasons]);
     }
 
+    public function getQueueList(Request $request)
+    {
+        $userId = $request->input('user_id');
+        $yearId = $request->input('year_id');
+        $status = $request->input('status', 'pending');
+
+        $validStatuses = ['pending', 'processing', 'completed', 'failed', 'all'];
+        if (!in_array($status, $validStatuses)) {
+            return $this->errorResponse('Invalid status value', 422);
+        }
+
+        $query = DB::table('tbl_queues as q')
+            ->select('q.*', 's.document_name', 'md.file_type')
+            ->leftJoin("y{$yearId}_scan_file as s", 's.scan_id', '=', 'q.scan_id')
+            ->leftJoin('master_doctype as md', 'md.type_id', '=', 'q.type_id')
+            ->where('q.created_by', $userId);
+
+        if ($status !== 'all') {
+            $query->where('q.status', $status);
+        }
+
+        $queues = $query->orderByDesc('q.created_at')->get();
+
+        $counts = DB::table('tbl_queues')
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->where('created_by', $userId)
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+
+        $statusCounts = [
+            'pending'    => (int) ($counts->get('pending')->total ?? 0),
+            'processing' => (int) ($counts->get('processing')->total ?? 0),
+            'completed'  => (int) ($counts->get('completed')->total ?? 0),
+            'failed'     => (int) ($counts->get('failed')->total ?? 0),
+        ];
+        $statusCounts['all'] = array_sum($statusCounts);
+
+        return $this->successResponse([
+            'queues'          => $queues,
+            'status_counts'   => $statusCounts,
+            'selected_status' => $status,
+        ]);
+    }
+
     public function extractDetails(Request $request)
     {
         $scanId = $request->input('scan_id');
