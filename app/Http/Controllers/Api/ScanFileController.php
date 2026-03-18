@@ -248,7 +248,7 @@ class ScanFileController extends Controller
         }
         // Prepare data for insertion
         $data = [
-            'group_id' => $request->input('group_id'),
+            'group_id' => 16,
             'temp_scan_by' => $userId,
             'is_temp_scan' => 'Y',
             'is_scan_complete' => 'N',
