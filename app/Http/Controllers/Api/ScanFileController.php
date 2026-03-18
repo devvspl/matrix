@@ -360,12 +360,22 @@ class ScanFileController extends Controller
     public function deleteSupportFile(Request $request)
     {
         $supportId = $request->input('support_id');
+
+        if (!$supportId) {
+            return $this->errorResponse('support_id is required', 400);
+        }
+
         try {
-            $supportFile = SupportFile::find($supportId);
+            $supportFile = SupportFile::where('support_id', $supportId)
+                ->where('is_deleted', SupportFile::STATUS_NO)
+                ->first();
+
             if (!$supportFile) {
                 return $this->notFoundResponse('Supporting file not found');
             }
-            $supportFile->delete();
+
+            $supportFile->update(['is_deleted' => SupportFile::STATUS_YES]);
+
             return $this->successResponse(null, 'Supporting file deleted successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to delete supporting file: ' . $e->getMessage(), 500);
