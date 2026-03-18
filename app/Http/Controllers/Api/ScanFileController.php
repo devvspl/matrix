@@ -367,14 +367,14 @@ class ScanFileController extends Controller
 
         try {
             $supportFile = SupportFile::where('support_id', $supportId)
-                ->where('is_deleted', SupportFile::STATUS_NO)
+                ->where('is_deleted', 'N')
                 ->first();
 
             if (!$supportFile) {
                 return $this->notFoundResponse('Supporting file not found');
             }
 
-            $supportFile->update(['is_deleted' => SupportFile::STATUS_YES]);
+            $supportFile->update(['is_deleted' => 'Y']);
 
             return $this->successResponse(null, 'Supporting file deleted successfully');
         } catch (\Exception $e) {
