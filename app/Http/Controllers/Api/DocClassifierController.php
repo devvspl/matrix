@@ -285,7 +285,7 @@ class DocClassifierController extends Controller
 
     private function getSupportFiles(int $scanId): array
     {
-        return DB::table('support_file')->select('supp_document_type_master.DocTypeName', 'support_file.file_path')->leftJoin('supp_document_type_master', 'supp_document_type_master.DocTypeId', '=', 'support_file.supp_doc_type_id')->where('support_file.scan_id', $scanId)->get()->toArray();
+        return DB::table('support_file')->select('supp_document_type_master.DocTypeName', 'supp_document_type_master.DocTypeCode', 'support_file.file_path')->leftJoin('supp_document_type_master', 'supp_document_type_master.DocTypeId', '=', 'support_file.supp_doc_type_id')->where('support_file.scan_id', $scanId)->get()->toArray();
     }
 
     public function getRejectedByMe(Request $request)
