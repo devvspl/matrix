@@ -290,9 +290,6 @@ class BillApproverController extends Controller
         }
     }
 
-    /**
-     * Approve or reject a bill at the appropriate approver level (L1/L2/L3).
-     */
     public function action(Request $request)
     {
         $request->validate([
