@@ -307,7 +307,7 @@ class DocClassifierController extends Controller
                 's.file_name',
                 's.file_path',
                 DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"),
-                DB::raw("CONCAT(sb.first_name, ' ', sb.last_name) AS scanned_by_name"),
+                DB::raw("CONCAT(sb.first_name, ' ', sb.last_name) AS scanned_by"),
             ])
             ->join("y{$yearId}_scan_file as s", 's.scan_id', '=', 'r.scan_id')
             ->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')
