@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillApproverController;
 use App\Http\Controllers\Api\DocClassifierController;
 use App\Http\Controllers\Api\FilterController;
+use App\Http\Controllers\Api\PunchEntryController;
 use App\Http\Controllers\Api\ScanFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,9 @@ Route::get('/filters/sub-departments', [FilterController::class, 'getSubDepartme
 Route::get('/filters/scanners', [FilterController::class, 'getScanners']);
 Route::get('/filters/classifiers', [FilterController::class, 'getClassifiers']);
 Route::get('/filters/punched-by', [FilterController::class, 'getPunchedBy']);
+// Punch Entry routes
+Route::get('/punch-entry/scan-detail', [PunchEntryController::class, 'getScanDetail']);
+
 // Bill Approver routes
 Route::get('/bill-approver/list', [BillApproverController::class, 'getList']);
 Route::get('/bill-approver/finance-rejected', [BillApproverController::class, 'getFinanceRejected']);
