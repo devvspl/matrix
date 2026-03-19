@@ -1,8 +1,10 @@
 <?php
 
-use App\Http\Controllers\Api\ScanFileController;
-use App\Http\Controllers\Api\DocClassifierController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillApproverController;
+use App\Http\Controllers\Api\DocClassifierController;
+use App\Http\Controllers\Api\FilterController;
+use App\Http\Controllers\Api\ScanFileController;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes
@@ -26,9 +28,6 @@ Route::get('/classification/processed', [DocClassifierController::class, 'getPro
 Route::get('/classification/extraction-queue', [DocClassifierController::class, 'getQueueList']);
 Route::get('/classification/verified', [DocClassifierController::class, 'getVerifiedProcessedList']);
 Route::get('/classification/not-verified', [DocClassifierController::class, 'getNotVerifiedProcessedList']);
-Route::get('/classification/doc-types', [DocClassifierController::class, 'getDocTypes']);
-Route::get('/classification/departments', [DocClassifierController::class, 'getDepartments']);
-Route::get('/classification/sub-departments', [DocClassifierController::class, 'getSubDepartments']);
 Route::get('/classification/bill-approvers', [DocClassifierController::class, 'getBillApprovers']);
 Route::get('/classification/auto-approve-reasons', [DocClassifierController::class, 'getAutoApproveReasons']);
 Route::post('/classification/extract-details', [DocClassifierController::class, 'extractDetails']);
@@ -38,3 +37,14 @@ Route::post('/classification/reject', [DocClassifierController::class, 'rejectSc
 Route::post('/classification/move', [DocClassifierController::class, 'moveToClassification']);
 Route::post('/classification/update-document-name', [DocClassifierController::class, 'updateDocumentName']);
 Route::post('/classification/update-received-status', [DocClassifierController::class, 'updateReceivedStatus']);
+// Filter routes
+Route::get('/filters/doc-types', [FilterController::class, 'getDocTypes']);
+Route::get('/filters/departments', [FilterController::class, 'getDepartments']);
+Route::get('/filters/sub-departments', [FilterController::class, 'getSubDepartments']);
+Route::get('/filters/scanners', [FilterController::class, 'getScanners']);
+Route::get('/filters/classifiers', [FilterController::class, 'getClassifiers']);
+Route::get('/filters/punched-by', [FilterController::class, 'getPunchedBy']);
+// Bill Approver routes
+Route::get('/bill-approver/list', [BillApproverController::class, 'getList']);
+Route::get('/bill-approver/finance-rejected', [BillApproverController::class, 'getFinanceRejected']);
+Route::post('/bill-approver/action', [BillApproverController::class, 'action']);

@@ -307,8 +307,10 @@ class DocClassifierController extends Controller
                 's.file_name',
                 's.file_path',
                 DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"),
+                DB::raw("CONCAT(sb.first_name, ' ', sb.last_name) AS scanned_by_name"),
             ])
             ->join("y{$yearId}_scan_file as s", 's.scan_id', '=', 'r.scan_id')
+            ->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')
             ->where('r.temp_scan_rejected_by', $userId);
 
         if ($fromDate) {
@@ -469,45 +471,8 @@ class DocClassifierController extends Controller
         }
     }
 
-    public function getDocTypes(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $docTypes = DB::table('master_doctype')->select('type_id', 'file_type', 'short_name', 'status')->where('status', 'A')->whereIn('type_id', function ($query) use ($userId) {
-                $query->select('permission_value')->from('tbl_user_permissions')->where('user_id', $userId)->where('permission_type', 'Document');
-            })->orderBy('file_type', 'ASC')->get();
-            return $this->successResponse($docTypes);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to fetch document types: ' . $e->getMessage(), 500);
-        }
-    }
 
-    public function getDepartments(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $departments = DB::table('core_department')->select('api_id', 'department_name', 'department_code')->whereIn('api_id', function ($query) use ($userId) {
-                $query->select('permission_value')->from('tbl_user_permissions')->where('user_id', $userId)->where('permission_type', 'Department');
-            })->get();
-            return $this->successResponse($departments);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to fetch departments: ' . $e->getMessage(), 500);
-        }
-    }
 
-    public function getSubDepartments(Request $request)
-    {
-        try {
-            $departmentId = $request->input('department_id');
-            if (!$departmentId) {
-                return $this->errorResponse('department_id is required', 400);
-            }
-            $subDepartments = DB::table('core_fun_vertical_dept_mapping as fvdm')->distinct()->select('sd.id as sub_department_id', 'sd.sub_department_name')->join('core_department_subdepartment_mapping as dsm', 'dsm.fun_vertical_dept_id', '=', 'fvdm.api_id')->join('core_sub_department as sd', 'sd.id', '=', 'dsm.sub_department_id')->where('fvdm.department_id', $departmentId)->get();
-            return $this->successResponse($subDepartments);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Failed to fetch sub-departments: ' . $e->getMessage(), 500);
-        }
-    }
 
     public function getBillApprovers(Request $request)
     {
