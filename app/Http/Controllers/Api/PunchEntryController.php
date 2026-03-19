@@ -106,7 +106,7 @@ class PunchEntryController extends Controller
                 ->first()
             : null;
 
-        $details = Schema::hasTable($detailTable)
+        $rawDetails = Schema::hasTable($detailTable)
             ? DB::table("{$detailTable} as d")
                 ->selectRaw("
                     d.particular,
@@ -125,24 +125,25 @@ class PunchEntryController extends Controller
                 ->leftJoin('master_unit as u', 'u.unit_id', '=', 'd.unit')
                 ->where('d.scan_id', $scanId)
                 ->get()
-                ->map(fn($row) => [
-                    ['label' => 'Particular',  'key' => 'particular',  'value' => $row->particular],
-                    ['label' => 'HSN',         'key' => 'hsn',         'value' => $row->hsn],
-                    ['label' => 'Qty',         'key' => 'qty',         'value' => $row->qty],
-                    ['label' => 'Unit',        'key' => 'unit',        'value' => $row->unit],
-                    ['label' => 'MRP',         'key' => 'mrp',         'value' => $row->mrp],
-                    ['label' => 'Dis. MRP',    'key' => 'dis_mrp',     'value' => $row->dis_mrp],
-                    ['label' => 'Amt',         'key' => 'amt',         'value' => $row->amt],
-                    ['label' => 'CGST %',      'key' => 'cgst',        'value' => $row->cgst],
-                    ['label' => 'SGST %',      'key' => 'sgst',        'value' => $row->sgst],
-                    ['label' => 'IGST %',      'key' => 'igst',        'value' => $row->igst],
-                    ['label' => 'Cess %',      'key' => 'cess',        'value' => $row->cess],
-                    ['label' => 'Total Amt',   'key' => 'total_amt',   'value' => $row->total_amt],
-                ])
             : collect();
 
+        $itemColumns = [
+            ['label' => 'Particular', 'key' => 'particular'],
+            ['label' => 'HSN',        'key' => 'hsn'],
+            ['label' => 'Qty',        'key' => 'qty'],
+            ['label' => 'Unit',       'key' => 'unit'],
+            ['label' => 'MRP',        'key' => 'mrp'],
+            ['label' => 'Dis. MRP',   'key' => 'dis_mrp'],
+            ['label' => 'Amt',        'key' => 'amt'],
+            ['label' => 'CGST %',     'key' => 'cgst'],
+            ['label' => 'SGST %',     'key' => 'sgst'],
+            ['label' => 'IGST %',     'key' => 'igst'],
+            ['label' => 'Cess %',     'key' => 'cess'],
+            ['label' => 'Total Amt',  'key' => 'total_amt'],
+        ];
+
         return (object) [
-            'fields' => [
+            'fields'       => [
                 ['label' => 'Invoice No.',          'key' => 'invoice_no',          'value' => $punch->invoice_no ?? null],
                 ['label' => 'Invoice Date',         'key' => 'invoice_date',        'value' => $punch->invoice_date ?? null],
                 ['label' => 'Purchase Order No.',   'key' => 'purchase_order_no',   'value' => $punch->purchase_order_no ?? null],
@@ -162,7 +163,8 @@ class PunchEntryController extends Controller
                 ['label' => 'Grand Total',          'key' => 'grand_total',         'value' => $punch->grand_total ?? null],
                 ['label' => 'Remark / Comment',     'key' => 'remark',              'value' => $punch->remark ?? null],
             ],
-            'items' => $details,
+            'item_columns' => $itemColumns,
+            'items'        => $rawDetails,
         ];
     }
 }
