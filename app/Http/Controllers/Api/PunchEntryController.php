@@ -22,7 +22,6 @@ class PunchEntryController extends Controller
         $scanId    = $request->input('scan_id');
         $yearId    = $request->input('year_id');
         $scanTable = "y{$yearId}_scan_file";
-
         try {
             $scan = DB::table("{$scanTable} as st")
                 ->selectRaw("
