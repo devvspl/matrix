@@ -463,6 +463,7 @@ class DocClassifierController extends Controller
                 'is_document_verified' => 'Y',
                 'verified_by' => $userId,
                 'verified_date' => now()->format('Y-m-d'),
+                'verified_date_datetime' => now()->format('Y-m-d H:i:s'),
             ];
             DB::table($table)->where('scan_id', $scanId)->update($data);
             return $this->successResponse(null, 'Document status updated successfully');
@@ -470,8 +471,6 @@ class DocClassifierController extends Controller
             return $this->errorResponse('Failed to update status: ' . $e->getMessage(), 500);
         }
     }
-
-
 
 
     public function getBillApprovers(Request $request)
