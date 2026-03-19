@@ -128,6 +128,7 @@ class PunchEntryController extends Controller
             : collect();
 
         $itemColumns = [
+            ['label' => '#',          'key' => 'sr_no'],
             ['label' => 'Particular', 'key' => 'particular'],
             ['label' => 'HSN',        'key' => 'hsn'],
             ['label' => 'Qty',        'key' => 'qty'],
@@ -164,7 +165,7 @@ class PunchEntryController extends Controller
                 ['label' => 'Remark / Comment',     'key' => 'remark',              'value' => $punch->remark ?? null],
             ],
             'item_columns' => $itemColumns,
-            'items'        => $rawDetails,
+            'items'        => $rawDetails->values()->map(fn($row, $index) => array_merge(['sr_no' => $index + 1], (array) $row)),
         ];
     }
 }
