@@ -71,7 +71,6 @@ class PunchEntryController extends Controller
                     ['label' => 'Punched Date',       'key' => 'punched_date',       'value' => $scan->punched_date],
                     ['label' => 'Punched By',         'key' => 'punched_by',         'value' => $scan->punched_by],
                 ],
-                'doc_type_id'  => $scan->doc_type_id,
                 'punch_detail' => $punchDetail,
             ]);
         } catch (\Exception $e) {
