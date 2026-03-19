@@ -56,7 +56,22 @@ class PunchEntryController extends Controller
             $punchDetail = $this->getPunchDetail($scanId, $yearId, $scan->doc_type_id);
 
             return $this->successResponse([
-                'scan'         => $scan,
+                'scan' => [
+                    ['label' => 'Scan ID',            'key' => 'scan_id',            'value' => $scan->scan_id],
+                    ['label' => 'Document Type',      'key' => 'doc_type',           'value' => $scan->doc_type],
+                    ['label' => 'Department',         'key' => 'department_name',    'value' => $scan->department_name],
+                    ['label' => 'Sub Department',     'key' => 'sub_department_name','value' => $scan->sub_department_name],
+                    ['label' => 'File Name',          'key' => 'file_name',          'value' => $scan->file_name],
+                    ['label' => 'Document Name',      'key' => 'document_name',      'value' => $scan->document_name],
+                    ['label' => 'File Path',          'key' => 'file_path',          'value' => $scan->file_path],
+                    ['label' => 'Scan Date',          'key' => 'scan_date',          'value' => $scan->scan_date],
+                    ['label' => 'Scanned By',         'key' => 'scanned_by',         'value' => $scan->scanned_by],
+                    ['label' => 'Classified Date',    'key' => 'classified_date',    'value' => $scan->classified_date],
+                    ['label' => 'Classified By',      'key' => 'classified_by',      'value' => $scan->classified_by],
+                    ['label' => 'Punched Date',       'key' => 'punched_date',       'value' => $scan->punched_date],
+                    ['label' => 'Punched By',         'key' => 'punched_by',         'value' => $scan->punched_by],
+                ],
+                'doc_type_id'  => $scan->doc_type_id,
                 'punch_detail' => $punchDetail,
             ]);
         } catch (\Exception $e) {
