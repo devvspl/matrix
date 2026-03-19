@@ -26,8 +26,8 @@ class BillApproverController extends Controller
             $classifyBy  = $request->input('classify_by');
             $punchedBy   = $request->input('punched_by');
             $search      = $request->input('search', '');
-            $perPage     = (int) $request->input('per_page', 10);
-            $page        = (int) $request->input('page', 1);
+            $perPage     = $request->input('per_page', 10);
+            $page        = $request->input('page', 1);
 
             $status = match ($statusInput) {
                 'approved' => 'Y',
@@ -176,8 +176,8 @@ class BillApproverController extends Controller
             $classifyBy = $request->input('classify_by');
             $punchedBy  = $request->input('punched_by');
             $search     = $request->input('search', '');
-            $perPage    = (int) $request->input('per_page', 10);
-            $page       = (int) $request->input('page', 1);
+            $perPage    = $request->input('per_page', 10);
+            $page       = $request->input('page', 1);
 
             $table = "y{$yearId}_scan_file";
 
