@@ -362,4 +362,75 @@ class BillApproverController extends Controller
         $msg = $action === 'approve' ? 'No pending approval found for you' : 'No pending rejection found for you';
         return $this->errorResponse($msg, 400);
     }
+
+    public function getDashboardCounters(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $yearId = $request->input('year_id');
+            $table  = "y{$yearId}_scan_file";
+
+            $base = DB::table($table)
+                ->where("{$table}.is_deleted", 'N')
+                ->where("{$table}.is_file_punched", 'Y')
+                ->where("{$table}.punched_by", '>', 0);
+
+            $approverScope = function ($query, $userId, $status) {
+                $query->where(function ($q) use ($userId, $status) {
+                    $q->where(function ($l1) use ($userId, $status) {
+                        $l1->whereRaw("FIND_IN_SET('$userId', REPLACE(l1_approved_by,' ','')) > 0");
+                        if ($status === 'N') $l1->where('l1_approved_status', 'N');
+                        elseif ($status === 'Y') $l1->where('l1_approved_status', 'Y')->where('l2_approved_status', '!=', 'R');
+                        else $l1->where(fn($r) => $r->where('l1_approved_status', 'R')->orWhere('finance_punch_status', 'R'));
+                    });
+                    $q->orWhere(function ($l2) use ($userId, $status) {
+                        $l2->whereRaw("FIND_IN_SET('$userId', REPLACE(l2_approved_by,' ','')) > 0")->where('l1_approved_status', 'Y');
+                        if ($status === 'N') $l2->where('l2_approved_status', 'N');
+                        elseif ($status === 'Y') $l2->where('l2_approved_status', 'Y')->where('l3_approved_status', '!=', 'R');
+                        else $l2->where(fn($r) => $r->where('l2_approved_status', 'R')->orWhere('finance_punch_status', 'R'));
+                    });
+                    $q->orWhere(function ($l3) use ($userId, $status) {
+                        $l3->whereRaw("FIND_IN_SET('$userId', REPLACE(l3_approved_by,' ','')) > 0")->where('l2_approved_status', 'Y');
+                        if ($status === 'N') $l3->where('l3_approved_status', 'N');
+                        elseif ($status === 'Y') $l3->where('l3_approved_status', 'Y');
+                        else $l3->where('l3_approved_status', 'R');
+                    });
+                });
+            };
+
+            $pendingQuery  = (clone $base)->where("{$table}.finance_punch_status", '!=', 'R');
+            $approvedQuery = (clone $base)->where("{$table}.finance_punch_status", '!=', 'R');
+            $rejectedQuery = (clone $base)->where("{$table}.finance_punch_status", '!=', 'R');
+
+            $approverScope($pendingQuery,  $userId, 'N');
+            $approverScope($approvedQuery, $userId, 'Y');
+            $approverScope($rejectedQuery, $userId, 'R');
+
+            $financeRejected = (clone $base)->where(function ($q) use ($userId) {
+                $q->where(function ($g) use ($userId) {
+                    $g->whereRaw("FIND_IN_SET('$userId', REPLACE(l1_approved_by_id,' ','')) > 0")
+                      ->where('l1_approved_status', 'Y')->where('l2_approved_status', 'R');
+                })->orWhere(function ($g) use ($userId) {
+                    $g->whereRaw("FIND_IN_SET('$userId', REPLACE(l2_approved_by_id,' ','')) > 0")
+                      ->where('l2_approved_status', 'Y')->where('l3_approved_status', 'R');
+                })->orWhere(function ($g) use ($userId) {
+                    $g->where('finance_punch_status', 'R')
+                      ->where(function ($last) use ($userId) {
+                          $last->where(fn($l) => $l->whereRaw("FIND_IN_SET('$userId', REPLACE(l1_approved_by_id,' ','')) > 0")->whereRaw("(l2_approved_by_id IS NULL OR l2_approved_by_id = '')"))
+                               ->orWhere(fn($l) => $l->whereRaw("FIND_IN_SET('$userId', REPLACE(l2_approved_by_id,' ','')) > 0")->whereRaw("(l3_approved_by_id IS NULL OR l3_approved_by_id = '')"))
+                               ->orWhere(fn($l) => $l->whereRaw("FIND_IN_SET('$userId', REPLACE(l3_approved_by_id,' ','')) > 0"));
+                      });
+                });
+            });
+
+            return $this->successResponse([
+                'pending'          => $pendingQuery->count(),
+                'approved'         => $approvedQuery->count(),
+                'rejected'         => $rejectedQuery->count(),
+                'finance_rejected' => $financeRejected->count(),
+            ]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to fetch dashboard counters: ' . $e->getMessage(), 500);
+        }
+    }
 }

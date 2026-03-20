@@ -51,4 +51,5 @@ Route::get('/punch-entry/scan-detail', [PunchEntryController::class, 'getScanDet
 // Bill Approver routes
 Route::get('/bill-approver/list', [BillApproverController::class, 'getList']);
 Route::get('/bill-approver/finance-rejected', [BillApproverController::class, 'getFinanceRejected']);
+Route::get('/bill-approver/dashboard-counters', [BillApproverController::class, 'getDashboardCounters']);
 Route::post('/bill-approver/action', [BillApproverController::class, 'action']);
