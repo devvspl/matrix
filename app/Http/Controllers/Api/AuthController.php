@@ -31,6 +31,7 @@ class AuthController extends Controller
             }
             $roles = DB::table('tbl_roles')
                 ->whereRaw('FIND_IN_SET(id, (SELECT role_id FROM users WHERE user_id = ?))', [$user->user_id])
+                ->whereNotIn('role_name', ['Admin', 'Super Admin', 'DMS Punching'])
                 ->pluck('role_name');
 
             return $this->successResponse([
