@@ -29,17 +29,22 @@ class AuthController extends Controller
             if (!$financialYear) {
                 return $this->errorResponse('Invalid financial year', 400);
             }
+            $roles = DB::table('tbl_roles')
+                ->whereRaw('FIND_IN_SET(id, (SELECT role_id FROM users WHERE user_id = ?))', [$user->user_id])
+                ->pluck('role_name');
+
             return $this->successResponse([
-                'user_id' => $user->user_id,
-                'emp_code' => $user->emp_code,
-                'emp_name' => $user->emp_name,
+                'user_id'     => $user->user_id,
+                'emp_code'    => $user->emp_code,
+                'emp_name'    => $user->emp_name,
                 'emp_contact' => $user->emp_contact,
-                'status' => $user->status,
-                'year_id' => $yearId,
-                'year_label' => $financialYear->label,
-                'start_date' => $financialYear->start_date,
-                'end_date' => $financialYear->end_date,
-                'is_current' => $financialYear->is_current,
+                'status'      => $user->status,
+                'roles'       => $roles,
+                'year_id'     => $yearId,
+                'year_label'  => $financialYear->label,
+                'start_date'  => $financialYear->start_date,
+                'end_date'    => $financialYear->end_date,
+                'is_current'  => $financialYear->is_current,
             ], 'Login successful');
         } catch (\Exception $e) {
             return $this->errorResponse('Login failed: ' . $e->getMessage(), 500);

@@ -19,8 +19,8 @@ class PunchEntryController extends Controller
             'year_id' => 'required|integer',
         ]);
 
-        $scanId    = $request->input('scan_id');
-        $yearId    = $request->input('year_id');
+        $scanId = $request->input('scan_id');
+        $yearId = $request->input('year_id');
         $scanTable = "y{$yearId}_scan_file";
         try {
             $scan = DB::table("{$scanTable} as st")
@@ -57,19 +57,19 @@ class PunchEntryController extends Controller
 
             return $this->successResponse([
                 'scan' => [
-                    ['label' => 'Scan ID',            'key' => 'scan_id',            'value' => $scan->scan_id],
-                    ['label' => 'Document Type',      'key' => 'doc_type',           'value' => $scan->doc_type],
-                    ['label' => 'Department',         'key' => 'department_name',    'value' => $scan->department_name],
-                    ['label' => 'Sub Department',     'key' => 'sub_department_name','value' => $scan->sub_department_name],
-                    ['label' => 'File Name',          'key' => 'file_name',          'value' => $scan->file_name],
-                    ['label' => 'Document Name',      'key' => 'document_name',      'value' => $scan->document_name],
-                    ['label' => 'File Path',          'key' => 'file_path',          'value' => $scan->file_path],
-                    ['label' => 'Scan Date',          'key' => 'scan_date',          'value' => $scan->scan_date],
-                    ['label' => 'Scanned By',         'key' => 'scanned_by',         'value' => $scan->scanned_by],
-                    ['label' => 'Classified Date',    'key' => 'classified_date',    'value' => $scan->classified_date],
-                    ['label' => 'Classified By',      'key' => 'classified_by',      'value' => $scan->classified_by],
-                    ['label' => 'Punched Date',       'key' => 'punched_date',       'value' => $scan->punched_date],
-                    ['label' => 'Punched By',         'key' => 'punched_by',         'value' => $scan->punched_by],
+                    ['label' => 'Scan ID', 'key' => 'scan_id', 'value' => $scan->scan_id],
+                    ['label' => 'Document Type', 'key' => 'doc_type', 'value' => $scan->doc_type],
+                    ['label' => 'Department', 'key' => 'department_name', 'value' => $scan->department_name],
+                    ['label' => 'Sub Department', 'key' => 'sub_department_name', 'value' => $scan->sub_department_name],
+                    ['label' => 'File Name', 'key' => 'file_name', 'value' => $scan->file_name],
+                    ['label' => 'Document Name', 'key' => 'document_name', 'value' => $scan->document_name],
+                    ['label' => 'File Path', 'key' => 'file_path', 'value' => $scan->file_path],
+                    ['label' => 'Scan Date', 'key' => 'scan_date', 'value' => $scan->scan_date],
+                    ['label' => 'Scanned By', 'key' => 'scanned_by', 'value' => $scan->scanned_by],
+                    ['label' => 'Classified Date', 'key' => 'classified_date', 'value' => $scan->classified_date],
+                    ['label' => 'Classified By', 'key' => 'classified_by', 'value' => $scan->classified_by],
+                    ['label' => 'Punched Date', 'key' => 'punched_date', 'value' => $scan->punched_date],
+                    ['label' => 'Punched By', 'key' => 'punched_by', 'value' => $scan->punched_by],
                 ],
                 'punch_detail' => $punchDetail,
             ]);
@@ -80,20 +80,22 @@ class PunchEntryController extends Controller
 
     private function getPunchDetail(int $scanId, int $yearId, int $docTypeId): ?object
     {
+        if ($docTypeId === 1) {
+            return $this->getPunchDetailType1($scanId, $yearId);
+        }
         if ($docTypeId === 23) {
             return $this->getPunchDetailType23($scanId, $yearId);
         }
-
     }
 
     private function getPunchDetailType23(int $scanId, int $yearId): object
     {
-        $punchTable  = "y{$yearId}_punchdata_23";
+        $punchTable = "y{$yearId}_punchdata_23";
         $detailTable = "y{$yearId}_punchdata_23_details";
 
         $punch = Schema::hasTable($punchTable)
             ? DB::table("{$punchTable} as p")
-                ->selectRaw("
+                ->selectRaw('
                     p.invoice_no,
                     p.invoice_date,
                     p.buyers_order_no AS purchase_order_no,
@@ -112,7 +114,7 @@ class PunchEntryController extends Controller
                     p.discount_in_mrp AS additional_discount,
                     p.grand_total,
                     p.remark_comment AS remark
-                ")
+                ')
                 ->leftJoin('master_firm as mf_buyer', 'mf_buyer.firm_id', '=', 'p.buyer')
                 ->leftJoin('master_firm as mf_vendor', 'mf_vendor.firm_id', '=', 'p.vendor')
                 ->where('p.scan_id', $scanId)
@@ -121,7 +123,7 @@ class PunchEntryController extends Controller
 
         $rawDetails = Schema::hasTable($detailTable)
             ? DB::table("{$detailTable} as d")
-                ->selectRaw("
+                ->selectRaw('
                     d.particular,
                     d.hsn,
                     d.qty,
@@ -134,51 +136,51 @@ class PunchEntryController extends Controller
                     d.igst,
                     d.cess,
                     d.total_amount AS total_amt
-                ")
+                ')
                 ->leftJoin('master_unit as u', 'u.unit_id', '=', 'd.unit')
                 ->where('d.scan_id', $scanId)
                 ->get()
             : collect();
 
         $itemColumns = [
-            ['label' => '#',          'key' => 'sr_no'],
+            ['label' => '#', 'key' => 'sr_no'],
             ['label' => 'Particular', 'key' => 'particular'],
-            ['label' => 'HSN',        'key' => 'hsn'],
-            ['label' => 'Qty',        'key' => 'qty'],
-            ['label' => 'Unit',       'key' => 'unit'],
-            ['label' => 'MRP',        'key' => 'mrp'],
-            ['label' => 'Dis. MRP',   'key' => 'dis_mrp'],
-            ['label' => 'Amt',        'key' => 'amt'],
-            ['label' => 'CGST %',     'key' => 'cgst'],
-            ['label' => 'SGST %',     'key' => 'sgst'],
-            ['label' => 'IGST %',     'key' => 'igst'],
-            ['label' => 'Cess %',     'key' => 'cess'],
-            ['label' => 'Total Amt',  'key' => 'total_amt'],
+            ['label' => 'HSN', 'key' => 'hsn'],
+            ['label' => 'Qty', 'key' => 'qty'],
+            ['label' => 'Unit', 'key' => 'unit'],
+            ['label' => 'MRP', 'key' => 'mrp'],
+            ['label' => 'Dis. MRP', 'key' => 'dis_mrp'],
+            ['label' => 'Amt', 'key' => 'amt'],
+            ['label' => 'CGST %', 'key' => 'cgst'],
+            ['label' => 'SGST %', 'key' => 'sgst'],
+            ['label' => 'IGST %', 'key' => 'igst'],
+            ['label' => 'Cess %', 'key' => 'cess'],
+            ['label' => 'Total Amt', 'key' => 'total_amt'],
         ];
 
         return (object) [
-            'fields'       => [
-                ['label' => 'Invoice No.',          'key' => 'invoice_no',          'value' => $punch->invoice_no ?? null],
-                ['label' => 'Invoice Date',         'key' => 'invoice_date',        'value' => $punch->invoice_date ?? null],
-                ['label' => 'Purchase Order No.',   'key' => 'purchase_order_no',   'value' => $punch->purchase_order_no ?? null],
-                ['label' => 'Purchase Order Date',  'key' => 'purchase_order_date', 'value' => $punch->purchase_order_date ?? null],
-                ['label' => 'Buyer',                'key' => 'buyer_name',          'value' => $punch->buyer_name ?? null],
-                ['label' => 'Buyer Address',        'key' => 'buyer_address',       'value' => $punch->buyer_address ?? null],
-                ['label' => 'Vendor',               'key' => 'vendor_name',         'value' => $punch->vendor_name ?? null],
-                ['label' => 'Vendor Address',       'key' => 'vendor_address',      'value' => $punch->vendor_address ?? null],
-                ['label' => 'Dispatch Through',     'key' => 'dispatch_through',    'value' => $punch->dispatch_through ?? null],
-                ['label' => 'Delivery Note Date',   'key' => 'delivery_note_date',  'value' => $punch->delivery_note_date ?? null],
-                ['label' => 'LR Number',            'key' => 'lr_number',           'value' => $punch->lr_number ?? null],
-                ['label' => 'LR Date',              'key' => 'lr_date',             'value' => $punch->lr_date ?? null],
-                ['label' => 'Total',                'key' => 'total',               'value' => $punch->total ?? null],
-                ['label' => 'Sub Total',            'key' => 'sub_total',           'value' => $punch->sub_total ?? null],
-                ['label' => 'Round Off',            'key' => 'round_off',           'value' => $punch->round_off ?? null],
-                ['label' => 'Additional Discount',  'key' => 'additional_discount', 'value' => $punch->additional_discount ?? null],
-                ['label' => 'Grand Total',          'key' => 'grand_total',         'value' => $punch->grand_total ?? null],
-                ['label' => 'Remark / Comment',     'key' => 'remark',              'value' => $punch->remark ?? null],
+            'fields' => [
+                ['label' => 'Invoice No.', 'key' => 'invoice_no', 'value' => $punch->invoice_no ?? null],
+                ['label' => 'Invoice Date', 'key' => 'invoice_date', 'value' => $punch->invoice_date ?? null],
+                ['label' => 'Purchase Order No.', 'key' => 'purchase_order_no', 'value' => $punch->purchase_order_no ?? null],
+                ['label' => 'Purchase Order Date', 'key' => 'purchase_order_date', 'value' => $punch->purchase_order_date ?? null],
+                ['label' => 'Buyer', 'key' => 'buyer_name', 'value' => $punch->buyer_name ?? null],
+                ['label' => 'Buyer Address', 'key' => 'buyer_address', 'value' => $punch->buyer_address ?? null],
+                ['label' => 'Vendor', 'key' => 'vendor_name', 'value' => $punch->vendor_name ?? null],
+                ['label' => 'Vendor Address', 'key' => 'vendor_address', 'value' => $punch->vendor_address ?? null],
+                ['label' => 'Dispatch Through', 'key' => 'dispatch_through', 'value' => $punch->dispatch_through ?? null],
+                ['label' => 'Delivery Note Date', 'key' => 'delivery_note_date', 'value' => $punch->delivery_note_date ?? null],
+                ['label' => 'LR Number', 'key' => 'lr_number', 'value' => $punch->lr_number ?? null],
+                ['label' => 'LR Date', 'key' => 'lr_date', 'value' => $punch->lr_date ?? null],
+                ['label' => 'Total', 'key' => 'total', 'value' => $punch->total ?? null],
+                ['label' => 'Sub Total', 'key' => 'sub_total', 'value' => $punch->sub_total ?? null],
+                ['label' => 'Round Off', 'key' => 'round_off', 'value' => $punch->round_off ?? null],
+                ['label' => 'Additional Discount', 'key' => 'additional_discount', 'value' => $punch->additional_discount ?? null],
+                ['label' => 'Grand Total', 'key' => 'grand_total', 'value' => $punch->grand_total ?? null],
+                ['label' => 'Remark / Comment', 'key' => 'remark', 'value' => $punch->remark ?? null],
             ],
             'item_columns' => $itemColumns,
-            'items'        => $rawDetails->values()->map(fn($row, $index) => array_merge(['sr_no' => $index + 1], (array) $row)),
+            'items' => $rawDetails->values()->map(fn($row, $index) => array_merge(['sr_no' => $index + 1], (array) $row)),
         ];
     }
 }
