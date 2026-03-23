@@ -17,6 +17,9 @@ class DocClassifierController extends Controller
         $tempScanBy = $request->input('temp_scan_by');
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
+        $userId = $request->input('user_id');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page');
         $table = "y{$yearId}_scan_file";
         $queuedScanIds = DB::table('tbl_queues')->where('status', 'pending')->pluck('scan_id')->toArray();
         $query = DB::table("{$table} as s")->select(['s.scan_id', 's.document_name', 's.file_path', 's.file_name', DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"), DB::raw("IF(s.is_temp_scan = 'Y', CONCAT(sb.first_name, ' ', sb.last_name), CONCAT(ba.first_name, ' ', ba.last_name)) AS scanned_by")])->leftJoin('master_group as g', 'g.group_id', '=', 's.group_id')->leftJoin('users as ba', 'ba.user_id', '=', 's.bill_approver_id')->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')->where('s.extract_status', 'P')->where('s.is_classified', 'N')->where('s.is_final_submitted', 'Y')->where('s.is_temp_scan_rejected', 'N')->where('s.is_deleted', 'N');
@@ -33,7 +36,10 @@ class DocClassifierController extends Controller
             $query->whereRaw("DATE(IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date)) <= ?", [$toDate]);
         }
         $query->orderBy('s.scan_id', 'DESC');
-        $documents = $query->get()->map(function ($doc) {
+        $total = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
             $doc->support_files = $this->getSupportFiles($doc->scan_id);
             return $doc;
         });
@@ -41,6 +47,14 @@ class DocClassifierController extends Controller
             'status' => 200,
             'success' => true,
             'data' => $documents,
+            'pagination' => [
+                'total' => $total,
+                'per_page' => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page' => (int) $lastPage,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -53,6 +67,8 @@ class DocClassifierController extends Controller
         $userId = $request->input('user_id');
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page');
         $query = DB::table("y{$yearId}_scan_file as s")->select(['s.scan_id', 'g.group_name', 'md.file_type', 's.extract_status', 'core_department.department_name', 'core_sub_department.sub_department_name', 'l.location_name', 's.document_name', 's.file_path', 's.file_name', 's.classified_date', 's.verified_date', 's.document_received_date', 's.is_document_verified', DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"), DB::raw("IF(s.is_temp_scan = 'Y', CONCAT(sb.first_name, ' ', sb.last_name), CONCAT(ba.first_name, ' ', ba.last_name)) AS scanned_by")])->leftJoin('master_group as g', 'g.group_id', '=', 's.group_id')->leftJoin('master_doctype as md', 'md.type_id', '=', 's.doc_type_id')->leftJoin('master_work_location as l', 'l.location_id', '=', 's.location_id')->leftJoin('users as ba', 'ba.user_id', '=', 's.bill_approver_id')->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')->leftJoin('core_department', 'core_department.api_id', '=', 's.department_id')->leftJoin('core_sub_department', 'core_sub_department.api_id', '=', 's.sub_department_id')->where('s.is_classified', 'Y')->where('s.is_deleted', 'N')->where('s.classified_by', $userId);
         if ($docTypeId) {
             $query->where('s.doc_type_id', $docTypeId);
@@ -70,7 +86,10 @@ class DocClassifierController extends Controller
             $query->whereDate('s.classified_date', '<=', $toDate);
         }
         $query->orderBy('s.classified_date_datetime', 'DESC');
-        $documents = $query->get()->map(function ($doc) {
+        $total = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
             $doc->support_files = $this->getSupportFiles($doc->scan_id);
             return $doc;
         });
@@ -78,6 +97,14 @@ class DocClassifierController extends Controller
             'status' => 200,
             'success' => true,
             'data' => $documents,
+            'pagination' => [
+                'total' => $total,
+                'per_page' => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page' => (int) $lastPage,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -90,6 +117,8 @@ class DocClassifierController extends Controller
         $userId = $request->input('user_id');
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page');
         $query = DB::table("y{$yearId}_scan_file as s")->select(['s.scan_id', 'g.group_name', 'md.file_type', 's.extract_status', 'core_department.department_name', 'core_sub_department.sub_department_name', 'l.location_name', 's.document_name', 's.file_path', 's.file_name', 's.classified_date', 's.verified_date', 's.document_received_date', 's.is_document_verified', DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"), DB::raw("IF(s.is_temp_scan = 'Y', CONCAT(sb.first_name, ' ', sb.last_name), CONCAT(ba.first_name, ' ', ba.last_name)) AS scanned_by")])->leftJoin('master_group as g', 'g.group_id', '=', 's.group_id')->leftJoin('master_doctype as md', 'md.type_id', '=', 's.doc_type_id')->leftJoin('master_work_location as l', 'l.location_id', '=', 's.location_id')->leftJoin('users as ba', 'ba.user_id', '=', 's.bill_approver_id')->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')->leftJoin('core_department', 'core_department.api_id', '=', 's.department_id')->leftJoin('core_sub_department', 'core_sub_department.api_id', '=', 's.sub_department_id')->where('s.is_classified', 'Y')->where('s.is_deleted', 'N')->where('s.classified_by', $userId)->where('s.is_document_verified', 'Y');
         if ($docTypeId) {
             $query->where('s.doc_type_id', $docTypeId);
@@ -107,7 +136,10 @@ class DocClassifierController extends Controller
             $query->whereDate('s.classified_date', '<=', $toDate);
         }
         $query->orderBy('s.classified_date_datetime', 'DESC');
-        $documents = $query->get()->map(function ($doc) {
+        $total = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
             $doc->support_files = $this->getSupportFiles($doc->scan_id);
             return $doc;
         });
@@ -115,6 +147,14 @@ class DocClassifierController extends Controller
             'status' => 200,
             'success' => true,
             'data' => $documents,
+            'pagination' => [
+                'total' => $total,
+                'per_page' => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page' => (int) $lastPage,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -127,6 +167,8 @@ class DocClassifierController extends Controller
         $userId = $request->input('user_id');
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page');
         $query = DB::table("y{$yearId}_scan_file as s")->select(['s.scan_id', 'g.group_name', 'md.file_type', 's.extract_status', 'core_department.department_name', 'core_sub_department.sub_department_name', 'l.location_name', 's.document_name', 's.file_path', 's.file_name', 's.classified_date', 's.verified_date', 's.document_received_date', 's.is_document_verified', DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"), DB::raw("IF(s.is_temp_scan = 'Y', CONCAT(sb.first_name, ' ', sb.last_name), CONCAT(ba.first_name, ' ', ba.last_name)) AS scanned_by")])->leftJoin('master_group as g', 'g.group_id', '=', 's.group_id')->leftJoin('master_doctype as md', 'md.type_id', '=', 's.doc_type_id')->leftJoin('master_work_location as l', 'l.location_id', '=', 's.location_id')->leftJoin('users as ba', 'ba.user_id', '=', 's.bill_approver_id')->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')->leftJoin('core_department', 'core_department.api_id', '=', 's.department_id')->leftJoin('core_sub_department', 'core_sub_department.api_id', '=', 's.sub_department_id')->where('s.is_classified', 'Y')->where('s.is_deleted', 'N')->where('s.classified_by', $userId)->where('s.is_document_verified', 'N');
         if ($docTypeId) {
             $query->where('s.doc_type_id', $docTypeId);
@@ -144,7 +186,10 @@ class DocClassifierController extends Controller
             $query->whereDate('s.classified_date', '<=', $toDate);
         }
         $query->orderBy('s.classified_date_datetime', 'DESC');
-        $documents = $query->get()->map(function ($doc) {
+        $total = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
             $doc->support_files = $this->getSupportFiles($doc->scan_id);
             return $doc;
         });
@@ -152,6 +197,14 @@ class DocClassifierController extends Controller
             'status' => 200,
             'success' => true,
             'data' => $documents,
+            'pagination' => [
+                'total' => $total,
+                'per_page' => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page' => (int) $lastPage,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -159,8 +212,13 @@ class DocClassifierController extends Controller
     {
         $yearId = $request->input('year_id');
         $userId = $request->input('user_id');
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page');
         $query = DB::table("y{$yearId}_scan_file as s")->select(['s.scan_id', 's.classifion_reject_date', 's.classifion_reject_remark', 'md.file_type', 's.extract_status', 's.document_name', 's.file_name', 's.file_path', DB::raw("IF(s.is_temp_scan = 'Y', s.temp_scan_date, s.scan_date) AS scan_date"), DB::raw("IF(s.is_temp_scan = 'Y', CONCAT(sb.first_name, ' ', sb.last_name), '') AS scanned_by")])->leftJoin('master_doctype as md', 'md.type_id', '=', 's.doc_type_id')->leftJoin('users as sb', 'sb.user_id', '=', 's.temp_scan_by')->where('s.document_name', '!=', '')->where('s.extract_status', 'Y')->where('s.is_deleted', 'N')->where('s.is_classified', 'Y')->where('s.is_classifion_reject', 'Y')->where('s.classified_by', $userId);
-        $documents = $query->get()->map(function ($doc) {
+        $total = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage = ceil($total / $perPage);
+        $documents = $documents->map(function ($doc) {
             $doc->support_files = $this->getSupportFiles($doc->scan_id);
             return $doc;
         });
@@ -168,6 +226,14 @@ class DocClassifierController extends Controller
             'status' => 200,
             'success' => true,
             'data' => $documents,
+            'pagination' => [
+                'total' => $total,
+                'per_page' => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page' => (int) $lastPage,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to' => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -226,6 +292,8 @@ class DocClassifierController extends Controller
     {
         $yearId  = $request->input('year_id');
         $userId  = $request->input('user_id');
+        $perPage = $request->input('per_page', 10);
+        $page    = $request->input('page', 1);
         $fromDate = $request->input('from_date');
         $toDate   = $request->input('to_date');
 
@@ -254,12 +322,22 @@ class DocClassifierController extends Controller
 
         $query->orderBy('r.temp_scan_reject_date', 'DESC');
 
-        $documents = $query->get();
+        $total     = $query->count();
+        $documents = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+        $lastPage  = ceil($total / $perPage);
 
         return response()->json([
-            'status'  => 200,
-            'success' => true,
-            'data'    => $documents,
+            'status'     => 200,
+            'success'    => true,
+            'data'       => $documents,
+            'pagination' => [
+                'total'        => $total,
+                'per_page'     => (int) $perPage,
+                'current_page' => (int) $page,
+                'last_page'    => (int) $lastPage,
+                'from'         => $total > 0 ? (($page - 1) * $perPage) + 1 : null,
+                'to'           => $total > 0 ? min($page * $perPage, $total) : null,
+            ],
         ]);
     }
 
@@ -393,6 +471,7 @@ class DocClassifierController extends Controller
             return $this->errorResponse('Failed to update status: ' . $e->getMessage(), 500);
         }
     }
+
 
     public function getBillApprovers(Request $request)
     {
